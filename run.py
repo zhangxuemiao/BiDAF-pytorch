@@ -3,7 +3,6 @@ import copy, json, os
 
 import torch
 from torch import nn, optim
-from torch.utils.tensorboard import SummaryWriter
 from time import gmtime, strftime
 
 from model.model import BiDAF
@@ -40,8 +39,6 @@ def train(args, data):
     optimizer = optim.Adadelta(parameters, lr=args.learning_rate)
     criterion = nn.CrossEntropyLoss()
 
-    writer = SummaryWriter(log_dir='runs/' + args.model_time)
-
     model.train()
     loss, last_epoch = 0, -1
     max_dev_exact, max_dev_f1 = -1, -1
@@ -71,10 +68,6 @@ def train(args, data):
             dev_loss, dev_exact, dev_f1 = test(model, ema, args, data)
             c = (i + 1) // args.print_freq
 
-            writer.add_scalar('loss/train', loss, c)
-            writer.add_scalar('loss/dev', dev_loss, c)
-            writer.add_scalar('exact_match/dev', dev_exact, c)
-            writer.add_scalar('f1/dev', dev_f1, c)
             print(f'train loss: {loss:.3f} / dev loss: {dev_loss:.3f}'
                   f' / dev EM: {dev_exact:.3f} / dev F1: {dev_f1:.3f}')
 
@@ -86,9 +79,7 @@ def train(args, data):
             loss = 0
             model.train()
 
-    writer.close()
     print(f'max dev EM: {max_dev_exact:.3f} / max dev F1: {max_dev_f1:.3f}')
-
     return best_model
 
 
@@ -162,7 +153,7 @@ def main():
     data = SQuAD(args)
     setattr(args, 'char_vocab_size', len(data.CHAR.vocab))
     setattr(args, 'word_vocab_size', len(data.WORD.vocab))
-    setattr(args, 'dataset_file', f'.data/squad/{args.dev_file}')
+    setattr(args, 'dataset_file', f'data/squad/{args.dev_file}')
     setattr(args, 'prediction_file', f'prediction{args.gpu}.out')
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     print('data loading complete!')
